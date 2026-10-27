@@ -1,0 +1,148 @@
+# Daily AI lesson: ChatGPT builds the lesson, Claude reviews implementation, Gemini tunes feel/assets,
+# then Claude synthesizes ONE assignment into docs/daily-lessons/ and opens an issue.
+# Each AI only runs if its secret is set; missing ones are flagged in the lesson, never faked.
+# Secrets: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY (Settings > Secrets and variables > Actions)
+name: Daily AI lesson
+on:
+  schedule:
+    - cron: "0 10 * * *"   # 10:00 UTC = 5:00 AM Chicago in summer (4:00 AM in winter)
+  workflow_dispatch:
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+      - name: Build project snapshot
+        run: |
+          {
+            echo "# Snapshot $(date -u +%F)"
+            echo "## Commits in the last 24h"
+            git log --since="24 hours ago" --stat --format='### %h %s (%an)' || true
+            echo "## Status"; cat docs/STATUS.md
+            echo "## Recent progress"; tail -n 20 docs/daily-progress.md
+          } > snapshot.md
+      - uses: actions/upload-artifact@v4
+        with: { name: snapshot, path: snapshot.md }
+
+  chatgpt:
+    needs: snapshot
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.OPENAI_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: snapshot }
+      - name: ChatGPT (Codex) builds the lesson
+        if: env.HAS_KEY == 'true'
+        continue-on-error: true
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .github/prompts/chatgpt-lesson.md
+          output-file: lesson-chatgpt.md
+          sandbox: read-only
+      - name: Flag if missing
+        run: |
+          test -s lesson-chatgpt.md || echo "MISSING: ChatGPT lesson not received (no OPENAI_API_KEY or the run failed)." > lesson-chatgpt.md
+      - uses: actions/upload-artifact@v4
+        with: { name: chatgpt, path: lesson-chatgpt.md }
+
+  claude:
+    needs: snapshot
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: snapshot }
+      - name: Claude reviews implementation
+        if: env.HAS_KEY == 'true'
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: "Follow the instructions in .github/prompts/claude-review.md"
+          claude_args: |
+            --max-turns 15
+            --allowedTools "Read,Glob,Grep,Write"
+      - name: Flag if missing
+        run: |
+          test -s review-claude.md || echo "MISSING: Claude review not received (no ANTHROPIC_API_KEY or the run failed)." > review-claude.md
+      - uses: actions/upload-artifact@v4
+        with: { name: claude, path: review-claude.md }
+
+  gemini:
+    needs: snapshot
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.GEMINI_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: snapshot }
+      - name: Gemini reviews game feel and assets
+        id: gemini
+        if: env.HAS_KEY == 'true'
+        continue-on-error: true
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          prompt: "Follow the instructions in .github/prompts/gemini-feel.md"
+      - name: Save Gemini output
+        env:
+          OUT: ${{ steps.gemini.outputs.summary }}
+        run: |
+          if [ -n "$OUT" ]; then printf '%s\n' "$OUT" > review-gemini.md
+          else echo "MISSING: Gemini review not received (no GEMINI_API_KEY or the run failed)." > review-gemini.md; fi
+      - uses: actions/upload-artifact@v4
+        with: { name: gemini, path: review-gemini.md }
+
+  synthesize:
+    needs: [chatgpt, claude, gemini]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      id-token: write
+    env:
+      HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { merge-multiple: true }
+      - name: Claude synthesizes one assignment
+        if: env.HAS_KEY == 'true'
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: "Today is the date in snapshot.md's first line. Follow the instructions in .github/prompts/synthesize.md"
+          claude_args: |
+            --max-turns 10
+            --allowedTools "Read,Glob,Write"
+      - name: Fallback if synthesis failed
+        run: |
+          F=docs/daily-lessons/$(date -u +%F).md
+          if [ ! -s "$F" ]; then
+            { echo "# Daily lesson $(date -u +%F)"; echo; echo "**Synthesis did not run** (no ANTHROPIC_API_KEY or it failed). Raw inputs below."
+              for f in lesson-chatgpt.md review-claude.md review-gemini.md; do echo; echo "---"; echo "## $f"; cat "$f" 2>/dev/null || echo "MISSING"; done; } > "$F"
+          fi
+      - name: Commit lesson and open issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          F=docs/daily-lessons/$(date -u +%F).md
+          git config user.name "daily-lesson-bot"; git config user.email "actions@users.noreply.github.com"
+          git add "$F" && git commit -m "Daily lesson $(date -u +%F)" && git push || echo "Nothing to commit"
+          gh issue create --title "Today's lesson: $(date -u +%F)" --body-file "$F" --label lesson || gh issue create --title "Today's lesson: $(date -u +%F)" --body-file "$F"

@@ -1,3 +1,5 @@
+> **Systems design from attempt-two.** The setting is now the blended world in [docs/WORLD.md](docs/WORLD.md), and most of these systems already exist in C++ (`Source/Hollowreach`, map in [docs/systems/hollowreach-systems-map.md](docs/systems/hollowreach-systems-map.md)). Build these Blueprint classes as children of the C++ ones.
+
 # Heavy Mettle — Design
 
 High-level goals
