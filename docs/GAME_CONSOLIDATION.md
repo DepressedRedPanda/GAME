@@ -1,71 +1,81 @@
-# GAME — consolidation and migration plan (UE 5.8.4)
+# GAME — consolidation plan and decision log (UE 5.8)
 
-## Decision
-One shipping game: **Heavy Mettle**, a human-looking amnesiac android taking morally complicated jobs in a lived-in alien frontier. One repository: **GAME** (target name; not yet created). One Unreal project: **ManOfMettle** (the local project name the creator has already chosen). One canonical gameplay runtime; **Blueprint-first**, Editor Python allowed, no imported legacy gameplay C++ by default.
+Started by ChatGPT, melded with Claude's combined build on 2026-10-27. Both AIs follow this file and `AGENTS.md`.
 
-Latest verified engine baseline: **Unreal Engine 5.8.4** (October 20, 2026 hotfix). Use 5.8.x serialization only after a project backup. Do not change versions per feature branch.
+## Decision log
 
-## Source ledger and preservation
-1. `DepressedRedPanda/attempt-two` — primary design and tools. Preserve all existing scripts, data, docs, design, story, console plan, and issue history. Migrate tested components to the Unreal project only after PIE validation.
-2. `DepressedRedPanda/Heavy-Mettle` — preserve its older 5.5 Third Person setup, first-playable tutorials, Script variations, and previous implementation notes as historical reference in `Legacy/Heavy-Mettle-55/`. Compare scripts before replacing newer variants.
-3. `DepressedRedPanda/The-Game` — preserve Hollowreach and Veil of Ash architecture, C++ source, procedural systems, quests, saves, tests, and docs as **reference only** under `Legacy/The-Game/`, preferably with complete git history separately accessible. Its fantasy campaign is NOT Heavy Mettle canon; do not merge its GameMode, C++ modules, combat classes, input, saves or assets directly into the active project.
+| Date | Decision (by Riv) | Replaces |
+| --- | --- | --- |
+| 2026-10-27 | One repo **GAME**, public | "private GAME repo" |
+| 2026-10-27 | **Blend both worlds**: Heavy Mettle's space-western frontier over Hollowreach/Veil of Ash's ancient ruins. Hollowreach "magic" = old Hollow tech on Battery. See `docs/WORLD.md` | "Hollowreach fantasy is not canon; no fantasy lore or magic" |
+| 2026-10-27 | **Compile Hollowreach's C++ in** as the game's systems; Blueprints built on top as child classes | "C++ is reference only; Blueprint-only runtime" |
+| 2026-10-27 | Fresh-start history in GAME; originals preserved verbatim under `Legacy/` with source commit IDs; original repos stay untouched | "git subtree with full histories" |
+| 2026-10-27 | Unreal project name **ManOfMettle**, engine **UE 5.8** (5.8.4 hotfix or newer 5.8.x) | Heavy Mettle 5.5.4 / 5.8.3 / Hollowreach 5.5 targets |
 
-**Important:** This file is a migration specification, not proof that the three repository file trees or histories have already been imported. The original repositories must remain intact until preservation is independently verified. For history-safe migration, use git remote fetch and git subtree with explicit prefixes (or preserve immutable source commit references), avoiding accidental overwrites of shared paths.
+## The game
 
-## Canonical layout
+**Heavy Mettle** — a human-looking amnesiac android taking morally complicated jobs in a lived-in alien frontier, slowly discovering the ruins beneath it are where he came from. One campaign, one player, one GameMode, one save chain.
+
+## Source ledger (all preserved)
+
+Exact source commits: `Legacy/SOURCE_COMMITS.txt`. Every original file is kept verbatim under `Legacy/`; the active tree is built from them.
+
+1. **`attempt-two`** → `Legacy/attempt-two/` — primary design and tools. Active copies: `DESIGN.md`, `data/`, `docs/` (creative direction, quests, Blueprint build, asset plans, PS5 and Windows guides), editor scripts in `Scripts/`.
+2. **`Heavy-Mettle`** → `Legacy/Heavy-Mettle-55/` — 5.5.4 setup, first-playable shooting lesson (active copy: `docs/FIRST_PLAYABLE_SHOOTING.md`), script variants (active copies in `Scripts/legacy/`), daily AI pipeline (`docs/ai/daily-pipeline-original.md`).
+3. **`The-Game`** → `Legacy/The-Game/` — README, docs, design maps, CLAUDE handoff, Gemini audit workflow and the archived Veil of Ash gameplay source (never compiled). Its live code (`Source/`, `Config/`, `Tests/`) is the active project; system docs are copied to `docs/systems/`.
+
+## Layout
+
 ```text
 GAME/
-  ManOfMettle.uproject
+  ManOfMettle.uproject     # UE 5.8, modules Hollowreach + SharedArt + VeilOfAsh
+  Source/                  # C++ systems (compiled) and ManOfMettle(Editor).Target.cs
   Config/
-  Content/                 # only local/editor-generated or rights-cleared UE assets
-    HeavyMettle/
-      Blueprints/
-      Characters/
-      Maps/
-      UI/
-  Scripts/                 # Unreal Editor Python tools
-  data/                    # balance, quests, tuning
-  docs/                    # active design, testing, beginner instructions
-  Legacy/
-    Heavy-Mettle-55/       # source/docs/scripts from first attempt
-    The-Game/              # Hollowreach/Veil reference (not compiled)
-  .github/
-    copilot-instructions.md
-    workflows/
-  AGENTS.md
-  CLAUDE.md
-  GEMINI.md
-  README.md
-  .gitignore
-  .gitattributes
+  Content/HeavyMettle/     # Blueprints (children of the C++ classes), maps, rights-cleared assets (LFS)
+  Scripts/                 # editor Python, build and check scripts
+  Tests/                   # engine-free rule tests
+  data/                    # balance and tuning
+  docs/                    # WORLD, STATUS, START_HERE, design, systems/, ai/, daily-lessons/
+  Legacy/                  # the three original repos, verbatim
+  .github/                 # AI instructions, prompts, workflows, templates
+  AGENTS.md CLAUDE.md GEMINI.md README.md ROADMAP.md
 ```
 
-## The first actual playable build
-Keep local `C:\UnrealProjects\ManOfMettle` if it already exists; back it up before migration. Do **not** replace its `Content`, `Config`, `.uproject` or player character with a text-only repo shell. Audit whether the locally created Third Person template is *Combat variant* or standard, because instructions written for Combat are not automatically valid for standard Third Person. If standard, keep it working and build shooting/melee incrementally; do not pretend Combat enemies exist.
+## Bringing in the local ManOfMettle project
 
-Milestone A: open editor, move/jump in existing map, create checkpoint commit with real .uasset/.umap via Git LFS.
-Milestone B: run and adapt `Scripts/build_dustfall.py` against the real project; inspect resulting `L_Dustfall`; play in editor.
-Milestone C: free-aim pistol and damage test, then one hostile enemy. Preserve control feel.
-Milestone D: sword melee, short 350cm line-of-sight lock-on, defensive move.
-Milestone E: first 15-minute *Missing Cells* mercenary job in Cinder's Rest / Old Relay with Oren Bale and two distinct moral outcomes, persistence and reload.
-Milestone F: art/audio, optimization, Windows packaged build, then exploration of console ports with licensed platform access.
+Back up `C:\UnrealProjects\ManOfMettle` first. Then follow `docs/START_HERE.md`: copy its `Content/` (and any maps/Blueprints Riv made) into the GAME clone, keep GAME's `ManOfMettle.uproject`, `Config/` and `Source/` (the repo's `.uproject` adds the C++ modules), build, open. Audit whether the local template was **Combat** or **standard** Third Person; Combat-specific instructions don't apply to a standard project, and the C++ already provides combat and enemies.
 
-Don't implement crafting, factions, companion systems, procedural dungeons or multiple RPG progression frameworks until the playable slice runs end to end.
+## Milestones (A–F kept from ChatGPT's plan; 0 added for the C++)
 
-## Legacy feature adaptation policy
-Examine Hollowreach's save schema, inventory, quests, dialog triggers, clock, reputation, traversal, procedural layouts and portable tests as reference for *design patterns*. Rewrite only the minimum needed for Heavy Mettle in Blueprint assets and test it. Avoid importing fantasy lore, magic, original game save names, unwanted engine modules, unsupported marketplace files or competing GameModes.
+- **0 — It builds:** `ManOfMettleEditor` compiles in UE 5.8; fix errors in small commits; editor opens; runtime graybox plays with `HRGameMode`.
+- **A:** move/jump in a real map; checkpoint commit with real `.uasset`/`.umap` via Git LFS; generate the Blueprint layer.
+- **B:** run and adapt `Scripts/build_dustfall.py`; play `L_Dustfall` (Cinder's Rest / Old Relay).
+- **C:** free-aim pistol and damage test in `BP_HM_Player`, then one hostile enemy.
+- **D:** sword melee (C++ combo/deflect), 350 cm line-of-sight lock-on, defensive move.
+- **E:** 15-minute *Missing Cells* job with Oren Bale, two moral outcomes, save and reload.
+- **F:** art/audio, optimization, Windows packaged build, then console exploration with licensed access.
+
+The C++ already contains crafting, factions, companion, procedural dungeons and full RPG progression. Leave them in place but **don't build on them until the slice runs end to end**, and never add a competing framework.
+
+## Legacy and C++ policy
+
+- The C++ is the one runtime. Fix it for UE 5.8; extend it through Blueprint children and exposed functions.
+- Change fiction (display text, art, VFX) to match `docs/WORLD.md`; **never change saved IDs**.
+- Don't compile `Legacy/`. Don't add a second GameMode, inventory or save system. Old save import (Hollowreach/Veil slots) stays as written.
 
 ## Asset and version control policy
-- Track `*.uasset` and `*.umap` with Git LFS; **never ignore them**.
-- Ignore generated `Binaries/`, `Intermediate/`, `DerivedDataCache/`, `Saved/`.
-- Editor Python is not packaged runtime scripting.
-- No API keys, unreleasable SDKs, restricted Fab marketplace packages or massive caches in git.
-- CI can lint text/scripts, check LFS pointers and file hygiene. **A green CI result is not proof of UE compilation, PIE, packaged launch or actual platform compatibility.**
 
-## Cutover procedure (not yet executed)
-1. Make a private `DepressedRedPanda/GAME` repository (or rename after backup) and ensure linked GitHub tools can access it.
-2. Mirror/copy all three repository histories/trees into non-overlapping source namespaces with git subtree or recorded immutable refs; keep a provenance manifest with source commit IDs.
-3. Promote `attempt-two` tools/docs/data to active directories, resolving overlapping docs manually.
-4. Check out a backup of the locally working `ManOfMettle` Unreal project and add its real `.uproject`, `Config`, `Content` to GAME. Install/configure Git LFS before the first binary asset commit.
-5. Standardize 5.8.4 in active guides; mark historical guidance by original version. Keep a test matrix and migrate feature-by-feature through PRs.
-6. Archive source repositories only after content and history checks, successful UE editor smoke test and successful clone/LFS checkout from GAME. Never delete source repos to complete the merge.
+- Track `*.uasset` and `*.umap` with Git LFS; **never ignore them**.
+- Ignore `Binaries/`, `Intermediate/`, `DerivedDataCache/`, `Saved/`.
+- Editor Python is not packaged runtime scripting.
+- No API keys, unreleasable SDKs, restricted Fab packages or caches in git.
+- CI (`.github/workflows/checks.yml`) checks project/C++ consistency, rule tests, script syntax and secrets. **Green CI is not proof of UE compilation, PIE, packaged launch or platform compatibility.**
+
+## Cutover status
+
+1. ✅ `DepressedRedPanda/GAME` created (public).
+2. ✅ All three trees preserved under `Legacy/` with source commit IDs. (Full histories remain in the original repos.)
+3. ✅ attempt-two tools/docs/data promoted to active paths; Hollowreach C++ promoted to the active project; overlapping docs resolved by hand.
+4. ⬜ Copy the local ManOfMettle `Content/` into GAME; install Git LFS before the first binary commit.
+5. ⬜ First successful UE 5.8 editor build and PIE smoke test; record in `docs/STATUS.md`.
+6. ⬜ Archive the three source repos only after step 5 and a clean clone/LFS checkout of GAME. Never delete them.

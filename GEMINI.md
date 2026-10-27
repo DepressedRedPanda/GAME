@@ -1,12 +1,13 @@
-> **Consolidation override (UE 5.8.4):** Read [AGENTS.md](AGENTS.md) and [docs/GAME_CONSOLIDATION.md](docs/GAME_CONSOLIDATION.md) first. Earlier 5.8.3, Combat-template, and standalone HeavyMettle instructions below are historical until verified against the actual local ManOfMettle project. Source repos are preserved; do not merge Hollowreach C++ into active runtime.
+# Gemini — role in GAME / Heavy Mettle
 
-# HEAVY METTLE — instructions for Gemini
-Engine: Unreal 5.8.3. Genre: Blueprint-first solo third-person RPG/shooter, alien frontier spaghetti western. User wants editable Blueprints and no C++ compile problems. Repo is not yet a packaged game; use a real Unreal Editor to generate and test binary assets. Work from data/balance.json, docs/BLUEPRINT_BUILD.md, and docs/CREATIVE_DIRECTION.md. Start with Epic Third Person Combat variant; use UE primitives and rights-cleared free Fab art. Prefer small individually runnable branches and a 15-minute playable quest. Never assume you can reuse marketplace source content in GitHub without license verification. Verify graph compilation and Play in Editor before claiming feature implementation.
+Read `AGENTS.md` and `docs/GAME_CONSOLIDATION.md` first; `AGENTS.md` overrides anything here. Riv's 2026-10-27 decisions (blended world, Hollowreach C++ compiled in, Blueprints on top, project ManOfMettle on UE 5.8) replace the older Blueprint-only/Combat-template notes kept in `Legacy/attempt-two/GEMINI.md`.
 
+## Your job: game feel, balance, free assets, second opinion
 
-## Owned library integration
-See docs/OWNED_LIBRARY_ASSET_PLAN.md and GitHub issues #7-8. The screenshots show Epic Launcher library, not an installed Unreal HeavyMettle Content folder. User currently shows engine 5.5.4 while this repo targets 5.8.3 with the 5.6+ Combat template. Evaluate compatibility in a temporary 5.8.3 project; prefer Free Animation Library, FREE Sword + Animation, Easy Crosshair, Free Firearm Sounds and then Ultra Components for ammo+inventory if no collision. Respect license and source redistribution limitations; do not assume asset source can be copied to this public GitHub repository.
+1. **Game feel:** camera, recoil, hit reactions, combo timing, movement, 3.5 m lock-on, parry window. Give numbers and where each is set (Blueprint variable, `data/balance.json`, or a C++ `UPROPERTY` default in `Source/Hollowreach`).
+2. **Balance:** compare `data/balance.json` with the C++ content in `Source/Hollowreach/Systems/HRBuiltinContent.cpp` for the 15-minute *Missing Cells* slice. Propose changes as a table: value, old, new, why.
+3. **Free assets:** specific free Fab/Quixel/Mixamo picks that fit `docs/WORLD.md` and work in UE 5.8. Check `docs/OWNED_LIBRARY_ASSET_PLAN.md` (prefer Free Animation Library, FREE Sword + Animation, Easy Crosshair, Free Firearm Sounds) and `docs/free_asset_manifest.json` first. Always state the license and whether it may be committed to this public repo. Don't wire in a second inventory/health framework — the C++ already has one.
+4. **Second opinion:** design and UE 5.8 compatibility checks, plus independent test ideas for PRs another AI wrote.
+5. One short practice exercise for Riv each time.
 
-
-## Platform mandate
-Lead platform PS5; first development environment Windows UE5.8. For controller-first Enhanced Input, platform-neutral save/menu architecture, Sony/Epic access gates and Xbox/Nintendo future-port plan, follow docs/START_HERE_PS5_MULTIPLATFORM.md. Console packaging requires official developer authorization, platform SDK and source-built Unreal; all gameplay systems can still be Blueprint-first. No console builds or runtime footage have been verified yet.
+You read files; Riv plays the game. Never claim anything was compiled or played. PS5 is the lead design platform, Windows first; no console-specific APIs in gameplay (`docs/START_HERE_PS5_MULTIPLATFORM.md`).

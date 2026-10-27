@@ -1,18 +1,17 @@
-> **Consolidation override (UE 5.8.4):** Read [AGENTS.md](../../AGENTS.md) and [docs/GAME_CONSOLIDATION.md](../../docs/GAME_CONSOLIDATION.md) first. Earlier 5.8.3, Combat-template, and standalone HeavyMettle instructions below are historical until verified against the actual local ManOfMettle project. Source repos are preserved; do not merge Hollowreach C++ into active runtime.
+# GitHub Copilot — GAME / Heavy Mettle
 
-# Copilot: Heavy Mettle
-- Unreal Engine 5.8.3, Blueprint-only runtime project. Avoid introducing C++ modules/build rules.
-- Base Epic Third Person **Combat** variant, not Lyra.
-- Alien frontier village, ground-level mercenary quests; no magic.
-- Melee proximity targeting max 350cm and line-of-sight; beyond that manual TPS aiming only.
-- Light/heavy combo chains, block/parry, pistol and sword body sockets, Chaos Cloth jacket after gameplay.
-- Built-in engine primitives for graybox; Fab content only with individual compatibility and license verification.
-- Use data/balance.json as canonical tuning reference and update it when implementing gameplay.
-- Commit generated .uasset/.umap under Git LFS; cannot edit or run them purely from GitHub text.
-- State what was actually compiled/tested in Unreal Editor. Favor short testable PRs, not unverified bulk changes.
+Follow [AGENTS.md](../AGENTS.md) and [docs/GAME_CONSOLIDATION.md](../docs/GAME_CONSOLIDATION.md). Riv's 2026-10-27 decisions replace the older Blueprint-only notes (kept in `Legacy/attempt-two/.github/copilot-instructions.md`).
 
+- Unreal Engine 5.8, project `ManOfMettle.uproject`. C++ systems in `Source/Hollowreach` (prefixes `AHR`/`UHR`, `FName` content IDs); gameplay additions as Blueprint children in `Content/HeavyMettle`.
+- Space-western frontier over ancient Hollow tech (`docs/WORLD.md`). No spells — abilities run on Battery.
+- Melee lock-on max 350 cm with line of sight; beyond that, free third-person aiming.
+- Light/heavy combos, block/parry, pistol and sword body sockets, Chaos Cloth duster after gameplay works.
+- `data/balance.json` is the tuning reference; update it when gameplay numbers change.
+- Never rename saved IDs. Never add a second GameMode, inventory or save system.
+- Commit `.uasset`/`.umap` via Git LFS; check Fab licenses; never commit secrets or console SDKs.
+- PS5 lead design platform, Windows first; platform-neutral Enhanced Input, gamepad-first UI.
 
-Owned Fab packs from user's launcher screenshot: see docs/OWNED_LIBRARY_ASSET_PLAN.md and issues #7 and #8. Use already-owned Free Animation Library for mantling and sword/crosshair/sound packs after 5.8.3 checks. Ultra Components has inventory+shooter components; do NOT combine overlapping inventory/health frameworks. Installed UE visible in screenshot is 5.5.4, which lacks the Combat variant; existing repo requires 5.8.3 unless intentionally redesigned. Never assert source assets are in repo; compile & PIE-test them locally, and check license before adding any third-party .uasset to this public repo.
+**PR review:** check each PR is one small playable change, lists three PIE tests and a `docs/daily-progress.md` line, and states plainly what was not compiled or tested in Unreal.
+**Coding agent:** one issue per draft PR; list what wasn't tested.
 
-
-Multiplatform requirement: PS5 is lead target; Windows is build and playable test platform until official console access. Read docs/START_HERE_PS5_MULTIPLATFORM.md. Use platform-neutral Enhanced Input actions, gamepad-first UMG/Common UI navigation, save abstraction and performance scalability. PS5 and Xbox require private authorized SDKs/source-built UE. Never commit restricted console tooling or assert a PS5 build exists without devkit testing.
+Riv is a beginner — plain-English comments and PR descriptions.

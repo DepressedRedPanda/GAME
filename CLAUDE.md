@@ -1,13 +1,21 @@
-> **Consolidation override (UE 5.8.4):** Read [AGENTS.md](AGENTS.md) and [docs/GAME_CONSOLIDATION.md](docs/GAME_CONSOLIDATION.md) first. Earlier 5.8.3, Combat-template, and standalone HeavyMettle instructions below are historical until verified against the actual local ManOfMettle project. Source repos are preserved; do not merge Hollowreach C++ into active runtime.
+# Claude — role in GAME / Heavy Mettle
 
-# HEAVY METTLE — instructions for Claude Code
-This repository belongs to a player building a Blueprint-first, editable Unreal Engine 5.8.3 third-person space western. Do not bring back Hollowreach/VeilOfAsh C++ modules. The current GitHub text cannot create binary .uassets, so separate researched/planned features from tested-in-Unreal features.
-First task when connected to a real editor: open the Epic Third Person Combat template, run Scripts/build_dustfall.py, test Play in Editor and commit generated .umap/.uasset files under Git LFS. Implement short-distance lock-on (<=350 cm), free-aim handgun, weapon body sockets, simple melee light/heavy combo and guard/parry; keep each change individually playable. Maintain a 'WORKS IN PIE' checklist in the README and never declare an untested feature done. Coordinate via Issues/PRs and leave only Blueprint assets/runtime logic in Content (editor Python tools are acceptable; no gameplay C++). Review data/balance.json and docs/CREATIVE_DIRECTION.md.
+Read `AGENTS.md` and `docs/GAME_CONSOLIDATION.md` first; `AGENTS.md` overrides anything here. Riv's 2026-10-27 decisions (blended world, Hollowreach C++ compiled in, Blueprints on top, project ManOfMettle on UE 5.8) replace the older "Blueprint-only, no Hollowreach C++, Combat template" instructions, which are kept in `Legacy/attempt-two/CLAUDE.md`.
 
+## Your job
+
+1. **Implementation review** (pull requests and the daily lesson): architecture, naming, folder layout, bugs, Blueprint/C++ boundary. At most **3** optional refactors, each with the exact Blueprint or file and a commit message. Flag anything that renames saved IDs or adds a second GameMode/save path.
+2. **UE 5.8 build fixes** in `Source/` — the C++ was written for 5.5 and has never been compiled. Smallest change per commit; one beginner-friendly sentence explaining each fix. Keep the single-runtime/single-save design in `docs/systems/hollowreach-veil-integration.md`.
+3. **Expose C++ to Blueprint** when a lesson needs it, instead of rewriting systems.
+4. **Combine the daily lesson** (`.github/prompts/synthesize.md`), flagging any AI that didn't report.
+
+## Useful context
+- Build target `ManOfMettleEditor`, Development Editor, Win64; script `Scripts/BuildEditor.ps1`.
+- Checks: `python Scripts/check_combined.py`; saves: `docs/systems/SAVE_MIGRATION.md`; open validation work: `docs/systems/VALIDATION.md`. The earlier C++ test plan in `Legacy/The-Game/CLAUDE.md` still applies.
+- Report compiled, PIE, packaged and imported-asset results separately. Untested means untested.
 
 ## Owned library integration
-Read docs/OWNED_LIBRARY_ASSET_PLAN.md before adding external assets. The user screenshot shows assets in Epic Launcher but the files were not imported into the public repo. Prioritize Free Animation Library (mantles/vault), FREE Sword + Animation (sword mesh, not sword combo system), Easy Crosshair (textures only), Free Firearm Sounds, Ultra Components inventory/shooter (isolated compatibility test). Existing UE5.8.3 Combat template remains the baseline; user has 5.5.4 installed and must install target UE 5.8.3 separately or pursue a deliberately different 5.5 architecture. Never upload third-party binaries until licensing is checked; run Scripts/audit_imported_assets.py locally to report candidates, then run PIE and report logs.
-
+Read `docs/OWNED_LIBRARY_ASSET_PLAN.md` before adding external assets. Priority: Free Animation Library (mantles/vault), FREE Sword + Animation (mesh only — combat logic is the C++ combo system), Easy Crosshair (textures), Free Firearm Sounds. Ultra Components overlaps the C++ inventory/health — test it in isolation only, never wire in a second inventory. Hook art in through **Project Settings → Game → Shared Free Asset Appearance** (`Source/SharedArt`). Never upload third-party binaries until the license is checked; run `Scripts/audit_imported_assets.py` locally first.
 
 ## Platform mandate
-Lead design platform is PS5, build/test on Windows first with controller input via Enhanced Input. Read docs/START_HERE_PS5_MULTIPLATFORM.md for beginner setup, mapping plan, official Sony/Epic developer access and performance/UI guidance. Avoid hard-coded Windows paths and PlayStation-specific platform APIs in runtime game Blueprints. Official console SDK integrations require a separately approved source-built Unreal Engine and must stay outside this public repo; do not claim a retail PS5 can run our Windows .exe.
+PS5 is the lead design platform; build and test on Windows first with controller input via Enhanced Input (`docs/START_HERE_PS5_MULTIPLATFORM.md`). No hard-coded Windows paths or PlayStation-specific APIs in gameplay code. Console SDK work needs approved access and a source-built engine and stays out of this public repo; never claim a PS5 build exists.
