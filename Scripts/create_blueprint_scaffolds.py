@@ -1,5 +1,15 @@
 """Create editable Blueprint *definitions* for Heavy Mettle in Unreal Editor 5.8.
 
+GAME repo layout: the C++ module (Hollowreach) supplies the working systems
+(player, combat, inventory, quests, saves...). The Blueprints made here are
+CHILDREN of those C++ classes, so you tune and extend everything in Blueprint
+without touching C++. If the C++ module is not built yet, each Blueprint falls
+back to a plain engine parent so the script still runs.
+
+The original standalone component scaffolds from attempt-two (Stats, Inventory,
+Combat, QuestTracker) duplicate C++ components, so they are only created when
+CREATE_STANDALONE_SCAFFOLDS = True.
+
 These assets compile but deliberately contain NO functional game graph.
 This makes their exact status visible and avoids claiming feature-complete gameplay.
 You can modify all names, variables, and function graphs inside Blueprint Editor.
@@ -13,8 +23,39 @@ ASSETS = unreal.EditorAssetLibrary
 if not ASSETS.does_directory_exist(ROOT):
     ASSETS.make_directory(ROOT)
 
+CREATE_STANDALONE_SCAFFOLDS = False
+
+
+def cpp_parent(class_name, fallback):
+    """Return /Script/Hollowreach.<class_name> if the C++ module is loaded, else fallback."""
+    try:
+        cls = unreal.load_class(None, "/Script/Hollowreach." + class_name)
+        if cls:
+            return cls
+    except Exception:
+        pass
+    unreal.log_warning("C++ class " + class_name + " not loaded; using " + fallback.__name__)
+    return fallback
+
+
+# Blueprint layer on top of the C++ systems (always created)
+LAYERED = [
+    ("BP_HM_GameMode", cpp_parent("HRGameMode", unreal.GameModeBase), [], []),
+    ("BP_HM_Player", cpp_parent("HRPlayerCharacter", unreal.Character),
+     [("Ammo", "int"), ("FireRate", "real"), ("IsFiring", "bool"), ("Damage", "real")],
+     ["StartFiring", "StopFiring", "FireOnce", "Reload"]),
+    ("BP_HM_Bandit", cpp_parent("HREnemyCharacter", unreal.Character),
+     [("Alerted", "bool"), ("KnowsPlayerLocation", "bool")],
+     ["OnSight", "Die"]),
+    ("BP_HM_Villager", cpp_parent("HRNPCCharacter", unreal.Character),
+     [("NPCName", "string"), ("QuestToOffer", "string")],
+     ["OfferQuest"]),
+    ("BP_HM_Companion", cpp_parent("HRCompanionCharacter", unreal.Character), [], []),
+    ("BP_HM_Guardian", cpp_parent("HRBossCharacter", unreal.Character), [], []),
+]
+
 # (asset, parent, variables with types, empty function graphs)
-DEFINITIONS = [
+STANDALONE = [
     ("BP_HM_Stats", unreal.ActorComponent,
      [("Health", "real"), ("MaxHealth", "real"), ("Stamina", "real"),
       ("MaxStamina", "real"), ("Battery", "real"), ("XP", "int"),
@@ -52,6 +93,9 @@ DEFINITIONS = [
       ("KnowsPlayerLocation", "bool")],
      ["OnSight", "ReceiveDamage", "Die"]),
 ]
+DEFINITIONS = LAYERED + [d for d in STANDALONE
+                         if CREATE_STANDALONE_SCAFFOLDS or d[0] in
+                         ("BP_HM_QuestGiver", "BP_HM_CraftingBench", "BP_HM_LootPickup")]
 created = []
 compiled = []
 errors = []
