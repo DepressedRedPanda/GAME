@@ -1,0 +1,22 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.8",
+  "Category": "Games",
+  "Description": "Heavy Mettle (GAME repo): space-western action RPG built on the Hollowreach C++ systems with a Blueprint layer on top.",
+  "Modules": [
+    {
+      "Name": "Hollowreach",
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+      "AdditionalDependencies": [ "Engine", "AIModule", "EnhancedInput" ]
+    },
+    { "Name": "VeilOfAsh", "Type": "Runtime", "LoadingPhase": "Default" },
+    { "Name": "SharedArt", "Type": "Runtime", "LoadingPhase": "Default" }
+  ],
+  "Plugins": [
+    { "Name": "EnhancedInput", "Enabled": true },
+    { "Name": "Niagara", "Enabled": true },
+    { "Name": "PythonScriptPlugin", "Enabled": true },
+    { "Name": "EditorScriptingUtilities", "Enabled": true }
+  ]
+}

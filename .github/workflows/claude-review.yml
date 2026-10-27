@@ -1,0 +1,33 @@
+# Claude reviews every pull request (architecture, naming, bugs, up to 3 refactors).
+name: Claude PR review
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review pull request ${{ github.repository }}#${{ github.event.pull_request.number }}.
+            Follow AGENTS.md and the "implementation reviewer" role in CLAUDE.md.
+            Post ONE review comment on the PR, written for a beginner, with sections:
+            Summary, Problems (bugs, save-ID changes, architecture breaks), Up to 3 optional refactors
+            (exact file/Blueprint + commit message), and "Not verifiable without Unreal".
+          claude_args: |
+            --max-turns 12
+            --allowedTools "Read,Glob,Grep,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*)"
+        env:
+          GH_TOKEN: ${{ github.token }}

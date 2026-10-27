@@ -1,0 +1,25 @@
+# Free safety net: runs on every push and pull request. No API keys needed.
+name: Source checks
+on:
+  push:
+  pull_request:
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - name: Project and C++ consistency checks
+        run: python3 Scripts/check_combined.py
+      - name: Campaign and save-migration rule tests
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -ISource/Hollowreach Tests/campaign_rules_test.cpp -o crt
+          ./crt
+      - name: Editor Python scripts parse
+        run: python3 -m py_compile Scripts/*.py Scripts/legacy/*.py
+      - name: No secrets committed
+        run: |
+          if git grep -nE '(sk-[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{30,}|sk-ant-[A-Za-z0-9_-]{20,})' -- . ':!*.md'; then
+            echo "::error::Something that looks like an API key is committed. Remove it and rotate the key."; exit 1
+          fi
