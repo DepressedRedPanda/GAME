@@ -1,0 +1,65 @@
+{
+  "version": "0.1",
+  "scale": "centimeters",
+  "setting": "Cinder's Rest / Rust Flats",
+  "player": {
+    "baseHealth": 100,
+    "baseStamina": 100,
+    "baseBattery": 100,
+    "walkSpeed": 300,
+    "sprintSpeed": 550,
+    "lockOnRangeCm": 350,
+    "mantleMaxHeightCm": 220
+  },
+  "combat": {
+    "pistolDamage": 20,
+    "magazine": 8,
+    "lightDamage": 14,
+    "heavyDamage": 26,
+    "lightStamina": 14,
+    "heavyStamina": 28,
+    "parryWindowSeconds": 0.18,
+    "guardStaminaPerSecond": 12,
+    "banditHP": 70,
+    "banditXP": 20
+  },
+  "recipes": [
+    {
+      "id": "ammo",
+      "output": 6,
+      "cost": {
+        "scrap": 2,
+        "powder": 1
+      }
+    },
+    {
+      "id": "healing_wrap",
+      "output": 1,
+      "cost": {
+        "cloth": 2,
+        "medgel": 1
+      }
+    },
+    {
+      "id": "grenade",
+      "output": 1,
+      "cost": {
+        "scrap": 3,
+        "powder": 2,
+        "batteryCell": 1
+      }
+    }
+  ],
+  "progression": {
+    "questXP": 100,
+    "baseXPToLevel": 100,
+    "xpStepPerLevel": 75,
+    "attributeChoices": [
+      "health",
+      "stamina",
+      "battery",
+      "speed",
+      "damage"
+    ]
+  }
+}

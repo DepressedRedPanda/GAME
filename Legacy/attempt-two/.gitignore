@@ -1,0 +1,44 @@
+# .gitignore for Unreal Engine
+# Generated for Unreal Engine projects
+# See https://github.com/github/gitignore/blob/main/UnrealEngine.gitignore
+
+# Visual Studio
+*.VC.db
+*.VC.VC.opendb
+
+# Build products
+Binaries/
+Build/
+DerivedDataCache/
+DerivedDataCacheServer/
+Intermediate/
+Saved/
+.vscode/
+.vs/
+
+# User-specific
+*.suo
+*.user
+*.userprefs
+
+# Mac
+.DS_Store
+
+# Logs
+*.log
+
+# UObject and uasset
+# NOTE: track uasset/umap with Git LFS instead of in plain git
+*.uasset
+*.umap
+
+# Unreal autosaves
+Autosaves/
+
+# Crashlytics
+crashlytics-build.properties
+
+# Rider
+.idea/
+*.sln.iml
+

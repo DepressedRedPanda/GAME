@@ -1,0 +1,14 @@
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+__pycache__/
+*.pyc
+.vs/
+.vscode/
+.idea/
+*.sln
+*.suo
+*.xcworkspace
+*.VC.db
+*.opendb

@@ -1,0 +1,40 @@
+# .gitignore for Unreal Engine (Blueprint-first)
+
+# Generated for Unreal Engine projects. Keep engine uasset and umap files tracked with Git LFS (do NOT ignore them here).
+
+# Visual Studio
+*.VC.db
+*.VC.VC.opendb
+
+# Build products
+Binaries/
+Build/
+DerivedDataCache/
+DerivedDataCacheServer/
+Intermediate/
+Saved/
+.vscode/
+.vs/
+
+# User-specific
+*.suo
+*.user
+*.userprefs
+
+# Mac
+.DS_Store
+
+# Logs
+*.log
+
+# Unreal autosaves
+Autosaves/
+
+# Crashlytics
+crashlytics-build.properties
+
+# Rider
+.idea/
+*.sln.iml
+
+# Do NOT ignore .uasset or .umap here; use Git LFS to track them instead.

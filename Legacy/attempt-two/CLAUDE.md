@@ -1,0 +1,11 @@
+# HEAVY METTLE — instructions for Claude Code
+This repository belongs to a player building a Blueprint-first, editable Unreal Engine 5.8.3 third-person space western. Do not bring back Hollowreach/VeilOfAsh C++ modules. The current GitHub text cannot create binary .uassets, so separate researched/planned features from tested-in-Unreal features.
+First task when connected to a real editor: open the Epic Third Person Combat template, run Scripts/build_dustfall.py, test Play in Editor and commit generated .umap/.uasset files under Git LFS. Implement short-distance lock-on (<=350 cm), free-aim handgun, weapon body sockets, simple melee light/heavy combo and guard/parry; keep each change individually playable. Maintain a 'WORKS IN PIE' checklist in the README and never declare an untested feature done. Coordinate via Issues/PRs and leave only Blueprint assets/runtime logic in Content (editor Python tools are acceptable; no gameplay C++). Review data/balance.json and docs/CREATIVE_DIRECTION.md.
+
+
+## Owned library integration
+Read docs/OWNED_LIBRARY_ASSET_PLAN.md before adding external assets. The user screenshot shows assets in Epic Launcher but the files were not imported into the public repo. Prioritize Free Animation Library (mantles/vault), FREE Sword + Animation (sword mesh, not sword combo system), Easy Crosshair (textures only), Free Firearm Sounds, Ultra Components inventory/shooter (isolated compatibility test). Existing UE5.8.3 Combat template remains the baseline; user has 5.5.4 installed and must install target UE 5.8.3 separately or pursue a deliberately different 5.5 architecture. Never upload third-party binaries until licensing is checked; run Scripts/audit_imported_assets.py locally to report candidates, then run PIE and report logs.
+
+
+## Platform mandate
+Lead design platform is PS5, build/test on Windows first with controller input via Enhanced Input. Read docs/START_HERE_PS5_MULTIPLATFORM.md for beginner setup, mapping plan, official Sony/Epic developer access and performance/UI guidance. Avoid hard-coded Windows paths and PlayStation-specific platform APIs in runtime game Blueprints. Official console SDK integrations require a separately approved source-built Unreal Engine and must stay outside this public repo; do not claim a retail PS5 can run our Windows .exe.

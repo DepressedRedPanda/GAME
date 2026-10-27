@@ -1,0 +1,97 @@
+name: Gemini Full Game Audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out unified game branch
+        uses: actions/checkout@v4
+        with:
+          ref: integration/unified-ue55-free-assets
+          persist-credentials: false
+
+      - name: Check Gemini credentials
+        shell: bash
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [[ -z "$GEMINI_API_KEY" ]]; then
+            echo "::error::Set GEMINI_API_KEY in repository Settings > Secrets and variables > Actions before running this workflow."
+            exit 1
+          fi
+
+      - name: Run portable source and campaign policy checks
+        shell: bash
+        continue-on-error: true
+        run: |
+          python3 Scripts/check_combined.py > baseline-audit.txt 2>&1
+          g++ -std=c++17 -Wall -Wextra -Werror -ISource/Hollowreach Tests/campaign_rules_test.cpp -o /tmp/campaign_rules_test >> baseline-audit.txt 2>&1
+          /tmp/campaign_rules_test >> baseline-audit.txt 2>&1
+          cat baseline-audit.txt
+
+      - name: Ask Gemini to audit the complete game repository
+        id: gemini
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          github_pr_number: '2'
+          prompt: |
+            Perform a thorough, READ-ONLY, evidence-based audit of this private Unreal Engine 5.5.4 game repository (Hollowreach + Veil of Ash), checking the checked-out integration/unified-ue55-free-assets branch. This request covers the ENTIRE game project, not merely the PR diff.
+
+            First enumerate files with git ls-files and systematically inspect all active code and configuration under Source/, Config/, Scripts/, Tests/, and all architecture/roadmap/save/asset docs. Read the README, CLAUDE.md, Docs/INTEGRATION.md, Docs/SAVE_MIGRATION.md, Docs/VALIDATION.md and Docs/FREE_ASSETS.md. Compare against the archived Veil source only to identify regressions. Do not claim to have read a file unless you actually inspected it; list areas not inspected or incompletely inspected.
+
+            Intended architecture: one integrated campaign, one active GameMode, shared character, quest progression, currency, skill tree, inventory, companion, factions, world state and canonical save slot Hollowreach_Unified_Slot0. There must be NO separate campaigns or alternate Veil save writer. Focus on:
+            1. Unreal 5.5.4 UHT, UnrealBuildTool, game module, Build.cs, generated/reflected headers, Unreal API, include dependencies, compilation and linker risks;
+            2. Quest flow, Memory Gate two routes, Pale Keeper and Warden boss gating, endings, factions, narrative, skills, combat, enemy/companion AI, inventory, crafting, traversal, survival, vehicles and procedural worlds;
+            3. Legacy Hollowreach_Slot0 and VeilOfAsh_Save1 import, versioning, invalid/future save guards, duplicate rewards and currency, New Game fresh-start guard, persistent resource/world/character state and cross-map load consistency;
+            4. Null pointers, garbage collection, type mismatches, integer bounds, race/thread issues, broken references, exploitability, performance traps, build/package/cooking blockers;
+            5. Free-asset manifest, licenses, unimported Content, animation meshes/collision and actual level/map prerequisites;
+            6. Coverage and test gaps: source checker and portable rule tests versus actual Unreal build, PIE, UHT, legacy save fixtures, automation, cooking, co-op and performance.
+
+            Read baseline-audit.txt if present. You may run non-destructive static checks. Do NOT change, commit, push, merge or delete project files. Do NOT claim Unreal compilation, asset integration, runtime operation, disk save loading, playtesting or a passing packaged game without executing those exact checks.
+
+            Return a substantial Markdown report with executive status, architecture summary, coverage inventory, specific CRITICAL/HIGH/MEDIUM/LOW findings with file paths and line numbers where verifiable, what actually failed versus untested, concrete smallest fixes, a prioritized fix sequence, and a UE 5.5.4 build/playtest checklist. If the audit cannot cover every file due to token/time limits, explicitly identify those gaps.
+
+      - name: Prepare report for GitHub
+        if: success()
+        shell: bash
+        env:
+          GEMINI_REPORT: ${{ steps.gemini.outputs.summary }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          report = os.environ.get("GEMINI_REPORT", "").strip()
+          if not report:
+              report = "Gemini completed without a text report. Check the GitHub Actions run log."
+          Path("gemini-full-audit.md").write_text("# Gemini complete game audit\n\n" + report + "\n")
+          max_chars = 55000
+          excerpt = report[:max_chars]
+          notice = "\n\n*Report truncated in this comment; see the GitHub Actions artifact for the full output.*" if len(report) > max_chars else ""
+          Path("gemini-audit-comment.md").write_text("## Gemini repository-wide audit\n\n" + excerpt + notice + "\n")
+          PY
+
+      - name: Post Gemini findings on integration PR
+        if: success()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment 2 --body-file gemini-audit-comment.md
+
+      - name: Keep full audit as downloadable artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gemini-full-game-audit
+          path: gemini-full-audit.md
+          if-no-files-found: ignore
